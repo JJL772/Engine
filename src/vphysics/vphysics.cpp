@@ -1,0 +1,10 @@
+#include "vphysics.h"
+
+CQuiverPhysics g_pQuiverPhysics;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CQuiverPhysics, IPhysics, VPHYSICS_INTERFACE_VERSION, g_pQuiverPhysics)
+
+CQuiverPhysicsCollision g_pQuiverPhysicsCollision;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CQuiverPhysicsCollision, IPhysicsCollision, VPHYSICS_COLLISION_INTERFACE_VERSION, g_pQuiverPhysicsCollision)
+
+CQuiverPhysicsSurfaceProps g_pQuiverPhysicsSurfaceProps;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CQuiverPhysicsSurfaceProps, IPhysicsSurfaceProps, VPHYSICS_SURFACEPROPS_INTERFACE_VERSION, g_pQuiverPhysicsSurfaceProps)

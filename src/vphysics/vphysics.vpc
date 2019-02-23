@@ -1,0 +1,28 @@
+//-----------------------------------------------------------------------------
+//	VPHYSICS.VPC
+//
+//	Project Script
+//-----------------------------------------------------------------------------
+
+$macro SRCDIR		".."
+$Macro OUTBINDIR	"$SRCDIR\..\game\bin"
+
+$include "$SRCDIR\vpc_scripts\source_dll_base.vpc"
+
+$Project "vphysics"
+{
+	$Folder	"Source Files"
+	{
+		$File	"vphysics.cpp"
+	}
+
+	$Folder	"Header Files"
+	{
+		$File	"vphysics.h"
+	}
+
+	$Folder	"Link Libraries"
+	{
+		$File	"$SRCDIR\lib\public\tier1.lib"
+	}
+}
