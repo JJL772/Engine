@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -17,6 +17,8 @@
 #include "kbutton.h"
 #include "ehandle.h"
 #include "inputsystem/AnalogCode.h"
+
+typedef unsigned int CRC32_t;
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -76,11 +78,14 @@ public:
 
 //	virtual		bool		IsNoClipping( void );
 	virtual		float		GetLastForwardMove( void );
+	virtual		float		Joystick_GetForward( void );
+	virtual		float		Joystick_GetSide( void );
+	virtual		float		Joystick_GetPitch( void );
+	virtual		float		Joystick_GetYaw( void );
 	virtual		void		ClearInputButton( int bits );
 
 	virtual		void		CAM_Think( void );
 	virtual		int			CAM_IsThirdPerson( void );
-	virtual		void		CAM_GetCameraOffset( Vector& ofs );
 	virtual		void		CAM_ToThirdPerson(void);
 	virtual		void		CAM_ToFirstPerson(void);
 	virtual		void		CAM_StartMouseMove(void);
@@ -93,6 +98,9 @@ public:
 	virtual		void		CAM_ToOrthographic();
 	virtual		bool		CAM_IsOrthographic() const;
 	virtual		void		CAM_OrthographicSize( float& w, float& h ) const;
+
+	virtual		float		CAM_CapYaw( float fVal ) const { return fVal; }
+	virtual		float		CAM_CapPitch( float fVal ) const { return fVal; }
 	
 #if defined( HL2_CLIENT_DLL )
 	// IK back channel info
@@ -103,8 +111,10 @@ public:
 	virtual		void		CAM_SetCameraThirdData( CameraThirdData_t *pCameraData, const QAngle &vecCameraOffset );
 	virtual		void		CAM_CameraThirdThink( void );	
 
+	virtual	bool		EnableJoystickMode();
+
 // Private Implementation
-private:
+protected:
 	// Implementation specific initialization
 	void		Init_Camera( void );
 	void		Init_Keyboard( void );
@@ -120,18 +130,19 @@ private:
 	void		AdjustAngles ( float frametime );
 	void		ClampAngles( QAngle& viewangles );
 	void		AdjustPitch( float speed, QAngle& viewangles );
-	void		AdjustYaw( float speed, QAngle& viewangles );
+	virtual void AdjustYaw( float speed, QAngle& viewangles );
 	float		DetermineKeySpeed( float frametime );
 	void		GetAccumulatedMouseDeltasAndResetAccumulators( float *mx, float *my );
 	void		GetMouseDelta( float inmousex, float inmousey, float *pOutMouseX, float *pOutMouseY );
 	void		ScaleMouse( float *x, float *y );
-	void		ApplyMouse( QAngle& viewangles, CUserCmd *cmd, float mouse_x, float mouse_y );
-	void		MouseMove ( CUserCmd *cmd );
+	virtual void ApplyMouse( QAngle& viewangles, CUserCmd *cmd, float mouse_x, float mouse_y );
+	virtual void MouseMove ( CUserCmd *cmd );
 
 	// Joystick  movement input helpers
 	void		ControllerMove ( float frametime, CUserCmd *cmd );
 	void		JoyStickMove ( float frametime, CUserCmd *cmd );
 	float		ScaleAxisValue( const float axisValue, const float axisThreshold );
+	virtual float JoyStickAdjustYaw( float flSpeed ) { return flSpeed; }
 
 	// Call this to get the cursor position. The call will be logged in the VCR file if there is one.
 	void		GetMousePos(int &x, int &y);
@@ -139,6 +150,8 @@ private:
 	void		GetWindowCenter( int&x, int& y );
 	// Called once per frame to allow convar overrides to acceleration settings when mouse is active
 	void		CheckMouseAcclerationVars();
+
+	void		ValidateUserCmd( CUserCmd *usercmd, int sequence_number );
 
 // Private Data
 private:
@@ -173,7 +186,7 @@ private:
 	{
 		MOUSE_ACCEL_THRESHHOLD1 = 0,	// if mouse moves > this many mickey's double it
 		MOUSE_ACCEL_THRESHHOLD2,		// if mouse moves > this many mickey's double it a second time
-		MOUSE_SPEED_FACTOR,				// 1 - 20 (default 10) scale factor to accelerated mouse setting
+		MOUSE_SPEED_FACTOR,				// 0 = disabled, 1 = threshold 1 enabled, 2 = threshold 2 enabled
 
 		NUM_MOUSE_PARAMS,
 	};
@@ -184,6 +197,9 @@ private:
 	bool		m_fMouseActive;
 	// Has the joystick advanced initialization been run?
 	bool		m_fJoystickAdvancedInit;
+	// Used to support hotplugging by reinitializing the advanced joystick system when we toggle between some/none joysticks.
+	bool		m_fHadJoysticks;
+
 	// Accumulated mouse deltas
 	float		m_flAccumulatedMouseXMovement;
 	float		m_flAccumulatedMouseYMovement;
@@ -212,8 +228,8 @@ private:
 	bool		m_fCameraInThirdPerson;
 	// Should we move view along with mouse?
 	bool		m_fCameraMovingWithMouse;
-	// What is the current camera offset from the view origin?
-	Vector		m_vecCameraOffset;
+
+	
 	// Is the camera in distance moving mode?
 	bool		m_fCameraDistanceMove;
 	// Old and current mouse position readings.
@@ -229,7 +245,20 @@ private:
 
 	float		m_flLastForwardMove;
 
+	float m_flPreviousJoystickForward;
+	float m_flPreviousJoystickSide;
+	float m_flPreviousJoystickPitch;
+	float m_flPreviousJoystickYaw;
+
+	class CVerifiedUserCmd
+	{
+	public:
+		CUserCmd	m_cmd;
+		CRC32_t		m_crc;
+	};
+				
 	CUserCmd	*m_pCommands;
+	CVerifiedUserCmd *m_pVerifiedCommands;
 
 	CameraThirdData_t	*m_pCameraThirdData;
 

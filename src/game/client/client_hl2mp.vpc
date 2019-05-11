@@ -13,7 +13,7 @@ $Configuration
 {
 	$Compiler
 	{
-		$AdditionalIncludeDirectories		"$BASE;hl2mp\UI,.\hl2mp,$SRCDIR\game\shared\hl2mp,.\hl2,.\hl2\elements,$SRCDIR\game\shared\hl2"
+		$AdditionalIncludeDirectories		"$BASE;hl2mp\ui,.\hl2mp,$SRCDIR\game\shared\hl2mp,.\hl2,.\hl2\elements,$SRCDIR\game\shared\hl2"
 		$PreprocessorDefinitions			"$BASE;HL2MP;HL2_CLIENT_DLL"
 	}
 }
@@ -26,13 +26,17 @@ $Project "Client (HL2MP)"
 
 		$File	"c_team_objectiveresource.cpp"
 		$File	"c_team_objectiveresource.h"
+		$File	"c_team_train_watcher.cpp"
+		$File	"c_team_train_watcher.h"
 		$File	"hud_voicestatus.cpp"
 		$File	"$SRCDIR\game\shared\predicted_viewmodel.cpp"
 		$File	"$SRCDIR\game\shared\predicted_viewmodel.h"
+		$File	"$SRCDIR\game\shared\teamplay_round_timer.cpp"
+		$File	"$SRCDIR\game\shared\teamplay_round_timer.h"
 
 		$Folder	"HL2 DLL"
 		{
-			$File	"episodic\c_vort_charge_token.cpp"
+ 			$File	"episodic\c_vort_charge_token.cpp"
 			$File	"$SRCDIR\game\shared\hl2\basehlcombatweapon_shared.cpp"
 			$File	"hl2\c_antlion_dust.cpp"
 			$File	"hl2\c_ar2_explosion.cpp"
@@ -105,7 +109,7 @@ $Project "Client (HL2MP)"
 			$File	"hl2\hud_suitpower.h"
 			$File	"hl2\hud_weaponselection.cpp"
 			$File	"hl2\hud_zoom.cpp"
-			$File	"hl2\ShieldProxy.cpp"
+			$File	"hl2\shieldproxy.cpp"
 			$File	"hl2\vgui_rootpanel_hl2.cpp"
 		}
 

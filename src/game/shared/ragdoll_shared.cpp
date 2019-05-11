@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -40,7 +40,7 @@ void CRagdollLowViolenceManager::SetLowViolence( const char *pMapName )
 
 #if !defined( CLIENT_DLL )
 	// the server doesn't worry about low violence during multiplayer games
-	if ( g_pGameRules->IsMultiplayer() )
+	if ( g_pGameRules && g_pGameRules->IsMultiplayer() )
 	{
 		m_bLowViolence = false;
 	}
@@ -184,6 +184,11 @@ static void RagdollAddSolid( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragdoll, 
 
 		if ( boneIndex >= 0 )
 		{
+			if ( params.fixedConstraints )
+			{
+				solid.params.mass = 1000.f;
+			}
+
 			solid.params.rotInertiaLimit = 0.1;
 			solid.params.pGameData = params.pGameData;
 			int surfaceData = physprops->GetSurfaceIndex( solid.surfaceprop );
@@ -223,7 +228,7 @@ static void RagdollAddConstraint( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragd
 		ragdollelement_t &childElement = ragdoll.list[constraint.childIndex];
 		// save parent index
 		childElement.parentIndex = constraint.parentIndex;
-
+	
 		if ( params.jointFrictionScale > 0 )
 		{
 			for ( int k = 0; k < 3; k++ )
@@ -239,7 +244,19 @@ static void RagdollAddConstraint( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragd
 		// UNDONE: We could transform the constraint limit axes relative to the bone space
 		// using this data.  Do we need that feature?
 		SetIdentityMatrix( constraint.constraintToReference );
-		childElement.pConstraint = pPhysEnv->CreateRagdollConstraint( childElement.pObject, ragdoll.list[constraint.parentIndex].pObject, ragdoll.pGroup, constraint );
+		if ( params.fixedConstraints )
+		{
+			// Makes the ragdoll a statue...
+			constraint_fixedparams_t fixed;
+			fixed.Defaults();
+			fixed.InitWithCurrentObjectState( childElement.pObject, ragdoll.list[constraint.parentIndex].pObject );
+			fixed.constraint.Defaults();
+			childElement.pConstraint = pPhysEnv->CreateFixedConstraint( childElement.pObject, ragdoll.list[constraint.parentIndex].pObject, ragdoll.pGroup, fixed );
+		}
+		else
+		{
+			childElement.pConstraint = pPhysEnv->CreateRagdollConstraint( childElement.pObject, ragdoll.list[constraint.parentIndex].pObject, ragdoll.pGroup, constraint );
+		}
 	}
 }
 
@@ -401,7 +418,7 @@ bool RagdollCreate( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsE
 	{
 		totalMass += ragdoll.list[i].pObject->GetMass();
 	}
-	totalMass = max(totalMass,1);
+	totalMass = MAX(totalMass,1);
 
 	// apply force to the model
 	Vector nudgeForce = params.forceVector;
@@ -725,8 +742,12 @@ bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
 		return false;
 	*/
 
+	// Bail if we have a null ragdoll pointer.
+	if ( !pRagdoll->m_pRagdoll )
+		return true;
+
 	Vector vMins, vMaxs;
-		
+
 	Vector origin = pRagdoll->m_pRagdoll->GetRagdollOrigin();
 	pRagdoll->m_pRagdoll->GetRagdollBounds( vMins, vMaxs );
 
@@ -1066,7 +1087,7 @@ void CRagdollLRURetirement::MoveToTopOfLRU( CBaseAnimating *pRagdoll, bool bImpo
 
 
 
-C_EntityDissolve *DissolveEffect( C_BaseAnimating *pTarget, float flTime )
+C_EntityDissolve *DissolveEffect( C_BaseEntity *pTarget, float flTime )
 {
 	C_EntityDissolve *pDissolve = new C_EntityDissolve;
 
